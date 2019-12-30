@@ -148,7 +148,7 @@ if __name__ == "__main__":
     click.echo("""
 #########################################################################
 # Author:   ewascome                                                    #
-# URL:      https://github.com/ewascome/dionysia_tools                  #
+# URL:      https://github.com/ewascome/Dionysia-Tools                  #
 # --                                                                    #
 #########################################################################
 #                   GNU General Public License v3.0                     #
