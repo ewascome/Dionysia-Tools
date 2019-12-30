@@ -94,7 +94,7 @@ def trakt_update(list_names, stage):
                   "type": "movie",
                   "user": "[Trakt List Username]"
             }}
-            log.error("You will need to add '%s' to {'trakt-update':[]} in the Configuration file", example)
+            log.error("You will need to add '%s' to {'trakt-update':{}} in the Configuration file", example)
             break
         list_details = cfg['trakt-update'][name]
         list_items = set(stevenlu.get_list_imdb(list_details['stevenlu_url'], name))
