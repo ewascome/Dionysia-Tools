@@ -9,6 +9,7 @@ from utils.config import Config
 log = logger.get_logger(__name__)
 cachefile = Config().cachefile
 
+
 class Plex:
 
     def __init__(self, cfg):

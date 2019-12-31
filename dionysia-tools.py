@@ -96,12 +96,13 @@ def plex_recently_added(library, number):
             title=trakt_movie['movie']['title'],
             year=trakt_movie['movie']['year'],
             timedelta_minutes=minutes
-            )
+        )
         minutes += -1
 
 ############################################################
 # Trakt Update
 ############################################################
+
 
 @app.command(context_settings=dict(max_content_width=119))
 @click.argument(
@@ -128,11 +129,11 @@ def trakt_update(list_names, stage):
         if name not in cfg['trakt-update']:
             example = {
                 name: {
-                  "list_id": "[Trakt List ID]",
-                  "stevenlu_url": "[JSON URL]",
-                  "type": "movie",
-                  "user": "[Trakt List Username]"
-            }}
+                    "list_id": "[Trakt List ID]",
+                    "stevenlu_url": "[JSON URL]",
+                    "type": "movie",
+                    "user": "[Trakt List Username]"
+                }}
             log.error("You will need to add '%s' to {'trakt-update':{}} in the Configuration file", example)
             break
         list_details = cfg['trakt-update'][name]
