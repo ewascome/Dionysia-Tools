@@ -694,12 +694,12 @@ class Trakt:
     def get_trending_movies(
             self,
             limit=1000,
+            pages=None,
             years=None,
             countries=None,
             languages=None,
             genres=None,
-            runtimes=None,
-            pages=None):
+            runtimes=None):
         return self._make_items_request(
             url=self.cfg.trakt.baseurl + "/movies/trending",
             object_name='movies',
@@ -713,7 +713,7 @@ class Trakt:
             pages=pages)
 
     def get_top_trending_movies(self, number):
-        return self.get_trending_movies(limit=number, pages=1)
+        return self.get_trending_movies(number, 1)
 
     @cache(cache_file=cachefile, retry_if_blank=True)
     def get_popular_movies(
@@ -814,13 +814,13 @@ class Trakt:
     def get_most_watched_movies(
             self,
             limit=1000,
+            pages=None,
             years=None,
             countries=None,
             languages=None,
             genres=None,
             most_type=None,
-            runtimes=None,
-            pages=None):
+            runtimes=None):
         return self._make_items_request(
             url=self.cfg.trakt.baseurl + "/movies/watched/{}".format('weekly' if not most_type else most_type),
             object_name='movies',
@@ -834,7 +834,7 @@ class Trakt:
             pages=pages)
 
     def get_top_most_watched_movies(self, number):
-        return self.get_most_watched_movies(limit=number, pages=1)
+        return self.get_most_watched_movies(number, 1)
 
     def get_boxoffice_movies(
             self,
