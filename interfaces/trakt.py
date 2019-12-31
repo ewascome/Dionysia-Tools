@@ -686,7 +686,7 @@ class Trakt:
             object_name='movie',
         )
 
-    @cache(cache_file=cachefile, retry_if_blank=True)
+    @cache(cache_file=cachefile, cache_time=3600, retry_if_blank=True)
     def get_trending_movies(
             self,
             limit=1000,
@@ -694,11 +694,9 @@ class Trakt:
             countries=None,
             languages=None,
             genres=None,
-            runtimes=None,
-    ):
-
+            runtimes=None):
         return self._make_items_request(
-            url='https://api.trakt.tv/movies/trending',
+            url=self.cfg.trakt.baseurl + "/movies/trending",
             object_name='movies',
             type_name='trending',
             limit=limit,
@@ -706,8 +704,10 @@ class Trakt:
             countries=countries,
             languages=languages,
             genres=genres,
-            runtimes=runtimes,
-        )
+            runtimes=runtimes)
+
+    def get_top_trending_movies(self, number):
+        return self.get_trending_movies()[0:number]
 
     @cache(cache_file=cachefile, retry_if_blank=True)
     def get_popular_movies(
@@ -891,7 +891,7 @@ class Trakt:
     def get_user_list_movies(self, list_user, list_key):
         log.debug('Fetching %s\'s %s Trakt list', list_user, list_key)
         return self._make_items_request(
-            url="https://api.trakt.tv/users/{u}/lists/{k}/items/movies".format(u=list_user, k=list_key),
+            url=self.cfg.trakt.baseurl + "/users/{u}/lists/{k}/items/movies".format(u=list_user, k=list_key),
             object_name='movies',
             type_name=("{k} from {u}".format(u=list_user, k=list_key)),
             limit=1000)
@@ -903,7 +903,7 @@ class Trakt:
     def post_user_list_movies(self, list_user, list_key, data):
         log.debug('Placing %s onto %s %s Trakt List ', data, list_user, list_key)
         resp = self._make_item_request(
-            url="https://api.trakt.tv/users/{u}/lists/{k}/items".format(u=list_user, k=list_key),
+            url=self.cfg.trakt.baseurl + "/users/{u}/lists/{k}/items".format(u=list_user, k=list_key),
             object_name=("{k} from {u}".format(u=list_user, k=list_key)),
             request_type='post',
             data=data)
@@ -923,7 +923,7 @@ class Trakt:
     def delete_user_list_movies(self, list_user, list_key, data):
         log.debug('Removing %s from %s %s Trakt List ', data, list_user, list_key)
         resp = self._make_item_request(
-            url="https://api.trakt.tv/users/{u}/lists/{k}/items/remove".format(u=list_user, k=list_key),
+            url=self.cfg.trakt.baseurl + "/users/{u}/lists/{k}/items/remove".format(u=list_user, k=list_key),
             object_name=("{k} from {u}".format(u=list_user, k=list_key)),
             request_type='post',
             data=data)

@@ -61,6 +61,45 @@ def app(config, cachefile, logfile, verbose):
 
 
 ############################################################
+# Plex Update Recently Added
+############################################################
+
+@app.command(context_settings=dict(max_content_width=119))
+@click.option(
+    '--library', '-l',
+    default='Movies',
+    show_default=True,
+    help="Name of the Movie library to update",
+)
+@click.option(
+    '--number', '-n',
+    default=10,
+    show_default=True,
+    type=int,
+    help="Number of Trakt Trending titles to move to beginning of the list",
+)
+def plex_recently_added(library, number):
+    """Will update Plex's Recently added list
+    to have available Trakt Trending titles
+    near the beginning.
+    """
+    from interfaces.trakt import Trakt
+    from interfaces.plex import Plex
+    plex = Plex(cfg)
+    trakt = Trakt(cfg)
+
+    trakt_trending = trakt.get_top_trending_movies(number)
+    minutes = 240 + number
+    for trakt_movie in trakt_trending:
+        plex.get_movie_then_push_addedAt(
+            section=library,
+            title=trakt_movie['movie']['title'],
+            year=trakt_movie['movie']['year'],
+            timedelta_minutes=minutes
+            )
+        minutes += -1
+
+############################################################
 # Trakt Update
 ############################################################
 
