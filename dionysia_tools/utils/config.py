@@ -91,8 +91,6 @@ class Config(object, metaclass=Singleton):
         """Initializes config"""
         self.conf = None
 
-        print(os.path.split(configfile)[0])
-
         pathlib.Path(os.path.split(configfile)[0]).mkdir(parents=True, exist_ok=True)
         pathlib.Path(os.path.split(cachefile)[0]).mkdir(parents=True, exist_ok=True)
         pathlib.Path(os.path.split(logfile)[0]).mkdir(parents=True, exist_ok=True)

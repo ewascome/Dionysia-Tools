@@ -7,8 +7,6 @@ import sys
 
 from appdirs import AppDirs
 dirs = AppDirs("Dionysia-Tools")
-import pprint
-pprint.pprint(dirs.user_log_dir)
 
 ############################################################
 # INIT
