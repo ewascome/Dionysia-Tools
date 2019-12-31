@@ -112,7 +112,8 @@ class Trakt:
             languages=None,
             genres=None,
             runtimes=None,
-            include_non_acting_roles=False):
+            include_non_acting_roles=False,
+            pages=None):
 
         # default payload
         if payload is None:
@@ -223,6 +224,9 @@ class Trakt:
                     # check if we have fetched the last page, break if so
                     if total_pages == 0:
                         log.debug("There were no more pages left to retrieve.")
+                        break
+                    elif pages and current_page >= pages:
+                        log.debug("Do not need to download additional pages")
                         break
                     elif current_page >= total_pages:
                         log.debug("There are no more pages left to retrieve results from.")
@@ -694,7 +698,8 @@ class Trakt:
             countries=None,
             languages=None,
             genres=None,
-            runtimes=None):
+            runtimes=None,
+            pages=None):
         return self._make_items_request(
             url=self.cfg.trakt.baseurl + "/movies/trending",
             object_name='movies',
@@ -704,10 +709,11 @@ class Trakt:
             countries=countries,
             languages=languages,
             genres=genres,
-            runtimes=runtimes)
+            runtimes=runtimes,
+            pages=pages)
 
     def get_top_trending_movies(self, number):
-        return self.get_trending_movies()[0:number]
+        return self.get_trending_movies(limit=number, pages=1)
 
     @cache(cache_file=cachefile, retry_if_blank=True)
     def get_popular_movies(
@@ -814,10 +820,9 @@ class Trakt:
             genres=None,
             most_type=None,
             runtimes=None,
-    ):
-
+            pages=None):
         return self._make_items_request(
-            url='https://api.trakt.tv/movies/watched/%s' % ('weekly' if not most_type else most_type),
+            url=self.cfg.trakt.baseurl + "/movies/watched/{}".format('weekly' if not most_type else most_type),
             object_name='movies',
             type_name='watched',
             limit=limit,
@@ -826,7 +831,10 @@ class Trakt:
             languages=languages,
             genres=genres,
             runtimes=runtimes,
-        )
+            pages=pages)
+
+    def get_top_most_watched_movies(self, number):
+        return self.get_most_watched_movies(limit=number, pages=1)
 
     def get_boxoffice_movies(
             self,

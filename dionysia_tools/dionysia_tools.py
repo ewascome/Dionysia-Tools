@@ -69,6 +69,11 @@ def app(config, cachefile, logfile, verbose):
 
 @app.command(context_settings=dict(max_content_width=119))
 @click.option(
+    '--list-names', '-l',
+    multiple=True,
+    help="Run a specific CONFIG specified list i.e. standard..."
+)
+@click.option(
     '--trending', '-t',
     help="Add/Update the Trakt 'Trending Collection'",
     is_flag=True
@@ -79,32 +84,52 @@ def app(config, cachefile, logfile, verbose):
     is_flag=True
 )
 @click.option(
-    '--file', '-f',
-    help="Add/Update from the Collections File'",
-    is_flag=True
-)
-@click.option(
     '--library',
     default='Movies',
     show_default=True,
     help="Name of the Movie library to update",
 )
 @click.option(
-    '--jsonfile',
-    type=click.Path(file_okay=True, dir_okay=False),
-    help='JSON Collections File',
-    show_default=True,
-    default=os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "collections.json")
+    '--stage',
+    help="Will analyze needed changes but will NOT update Plex",
+    is_flag=True
 )
-def plex_collections(library, trending, popular, file, jsonfile):
-    """Will update Plex's Collections to include an automatically generated
-    lists from Trakt from Trending and Watched (Popular).
-    It will also add collections from a JSON file.
+def plex_collections(library, trending, popular, list_names, stage):
+    """Will update Plex's Collections based on lists per the config file.
+    It can also create a dynamic Trending and Watched (Popular) trakt collections.
     """
+    if not list_names:
+        list_names = cfg['plex-collections'].keys()
+
     from .interfaces.trakt import Trakt
     from .interfaces.plex import Plex
+    from .interfaces.json import JSONList
     plex = Plex(cfg)
     trakt = Trakt(cfg)
+    json_list = JSONList(cfg)
+
+    for name in list_names:
+        if name not in cfg['plex-collections']:
+            example = {
+                name: {
+                    "list_id": "[Trakt List ID]",
+                    "stevenlu_url": "[JSON URL]",
+                    "type": "movie",
+                    "user": "[Trakt List Username]"
+                }}
+            example = {
+                name: {
+                    'url': '[JSON URL]'
+                }}
+            log.error("You will need to add '%s' to {'plex-collections':{}} in the Configuration file", example)
+            break
+        list_details = cfg['plex-collections'][name]
+        list_items = json_list.get_list(list_details['url'], name)
+        for collection in list_items:
+            plex.update_collection(library,
+                                   collection['list_movies'],
+                                   collection['collection_name'],
+                                   stage)
 
     if trending:
         trakt_movies = trakt.get_top_trending_movies(30)
@@ -114,7 +139,24 @@ def plex_collections(library, trending, popular, file, jsonfile):
                 'title': trakt_movie['movie']['title'],
                 'year': trakt_movie['movie']['year'],
             })
-        plex.update_collection(library, trakt_movie_list, 'Trakt Trending')
+        plex.update_collection(library,
+                               trakt_movie_list,
+                               'Trakt Trending',
+                               stage)
+
+    if popular:
+        trakt_movies = trakt.get_top_most_watched_movies(30)
+        trakt_movie_list = []
+        for trakt_movie in trakt_movies:
+            trakt_movie_list.append({
+                'title': trakt_movie['movie']['title'],
+                'year': trakt_movie['movie']['year'],
+            })
+        plex.update_collection(library,
+                               trakt_movie_list,
+                               'Trakt Popular',
+                               stage)
+
 
 
 ############################################################
@@ -162,24 +204,26 @@ def plex_recently_added(library, number):
 
 
 @app.command(context_settings=dict(max_content_width=119))
-@click.argument(
-    'list-names',
-    nargs=-1,
-    required=True
+@click.option(
+    '--list-names', '-l',
+    multiple=True,
+    help="Run a specific CONFIG specified list i.e. cfdvd, cftheater, stevenlu..."
 )
 @click.option(
     '--stage',
-    help="Will analyze needed changes but will NOT update Trakt", is_flag=True
+    help="Will analyze needed changes but will NOT update Trakt",
+    is_flag=True
 )
 def trakt_update(list_names, stage):
-    """Update Trakt with StevenLu type lists.
-
-    The following LIST_NAMES are available:
-    cfdvd, cftheater, stevenlu
     """
+    Update Trakt with StevenLu type lists.
+    """
+    if not list_names:
+        list_names = cfg['trakt-update'].keys()
+
     from .interfaces.trakt import Trakt
-    from .interfaces.stevenlu import StevenLu
-    stevenlu = StevenLu(cfg)
+    from .interfaces.json import JSONList
+    stevenlu = JSONList(cfg)
     trakt = Trakt(cfg)
 
     for name in list_names:

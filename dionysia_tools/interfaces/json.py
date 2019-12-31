@@ -11,7 +11,7 @@ log = logger.get_logger(__name__)
 cachefile = Config().cachefile
 
 
-class StevenLu:
+class JSONList:
 
     def __init__(self, cfg):
         self.cfg = cfg
@@ -36,7 +36,7 @@ class StevenLu:
                     if chunk:
                         resp_data += chunk
         else:
-            with requests.get(url, headers=headers, params=payload, timeout=30, stream=False) as req:
+            with requests.get(url, headers=headers, params=payload, timeout=30, stream=True) as req:
                 for chunk in req.iter_content(chunk_size=250000, decode_unicode=False):
                     if chunk:
                         resp_data += chunk

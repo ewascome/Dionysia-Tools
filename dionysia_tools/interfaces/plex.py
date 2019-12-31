@@ -87,7 +87,7 @@ class Plex:
         log.debug("Searched for '%s' Collection and found %s videos", collection, len(videos))
         return videos
 
-    def update_collection(self, section, list_of_titles_years, collection_name):
+    def update_collection(self, section, list_of_titles_years, collection_name, stage=False):
         list_collection = []
         for list_movie in list_of_titles_years:
             movie = self.get_movie(section, list_movie['title'], list_movie['year'])
@@ -98,8 +98,14 @@ class Plex:
 
         remove_collection = set(plex_collection) - set(list_collection)
         for video in remove_collection:
-            self.remove_tag(video, collection_name, 'collections')
+            if stage:
+                log.info("STAGING: %s, will REMOVE %s", video, collection_name)
+            else:
+                self.remove_tag(video, collection_name, 'collections')
 
         add_collection = set(list_collection) - set(plex_collection)
         for video in add_collection:
-            self.add_tag(video, collection_name, 'collections')
+            if stage:
+                log.info("STAGING: %s, will ADD %s", video, collection_name)
+            else:
+                self.add_tag(video, collection_name, 'collections')

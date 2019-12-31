@@ -57,6 +57,11 @@ class Config(object, metaclass=Singleton):
                 'stevenlu_url': 'https://s3.amazonaws.com/popular-movies/movies.json'
             }
         },
+        'plex-collections': {
+            'standard': {
+                'url': 'https://api.jsonbin.io/b/5e0b7de402ce5777b8b566d3/latest'
+            },
+        },
         'plex': {
             'url': '',
             'token': '',
