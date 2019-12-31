@@ -3,8 +3,8 @@ import requests
 
 from plexapi.server import PlexServer, CONFIG
 from cashier import cache
-from utils.log import logger
-from utils.config import Config
+from ..utils.log import logger
+from ..utils.config import Config
 
 log = logger.get_logger(__name__)
 cachefile = Config().cachefile
@@ -80,3 +80,26 @@ class Plex:
         if movie and movie.media[0].videoResolution in ['1080', '4K']:
             self.add_tag(movie, 'Trakt Trending', 'collections')
             self.update_addedAt(movie, addedAt)
+
+    def get_collection(self, section, collection):
+        section = self.plex.library.section(section)
+        videos = section.search(collection=collection)
+        log.debug("Searched for '%s' Collection and found %s videos", collection, len(videos))
+        return videos
+
+    def update_collection(self, section, list_of_titles_years, collection_name):
+        list_collection = []
+        for list_movie in list_of_titles_years:
+            movie = self.get_movie(section, list_movie['title'], list_movie['year'])
+            if movie:
+                list_collection.append(movie)
+
+        plex_collection = self.get_collection(section, collection_name)
+
+        remove_collection = set(plex_collection) - set(list_collection)
+        for video in remove_collection:
+            self.remove_tag(video, collection_name, 'collections')
+
+        add_collection = set(list_collection) - set(plex_collection)
+        for video in add_collection:
+            self.add_tag(video, collection_name, 'collections')

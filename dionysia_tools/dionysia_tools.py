@@ -5,6 +5,11 @@ import schedule
 import signal
 import sys
 
+from appdirs import AppDirs
+dirs = AppDirs("Dionysia-Tools")
+import pprint
+pprint.pprint(dirs.user_log_dir)
+
 ############################################################
 # INIT
 ############################################################
@@ -21,7 +26,7 @@ notify = None
     type=click.Path(file_okay=True, dir_okay=False),
     help='Configuration file',
     show_default=True,
-    default=os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "config.json")
+    default=os.path.join(dirs.user_config_dir, "config.json")
 )
 @click.option(
     '--cachefile',
@@ -29,7 +34,7 @@ notify = None
     type=click.Path(file_okay=True, dir_okay=False),
     help='Cache file',
     show_default=True,
-    default=os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "cache.db")
+    default=os.path.join(dirs.user_cache_dir, "cache.db")
 )
 @click.option(
     '--logfile',
@@ -37,7 +42,7 @@ notify = None
     type=click.Path(file_okay=True, dir_okay=False),
     help='Log file',
     show_default=True,
-    default=os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "activity.log")
+    default=os.path.join(dirs.user_log_dir, "activity.log")
 )
 @click.option(
     '--verbose',
@@ -49,15 +54,69 @@ def app(config, cachefile, logfile, verbose):
     global cfg, log, notify
 
     # Load config
-    from utils.config import Config
+    from .utils.config import Config
     cfg = Config(configfile=config, cachefile=cachefile, logfile=logfile).cfg
     if verbose:
         cfg['core']['debug'] = True
 
     # Load logger
-    from utils.log import logger
+    from .utils.log import logger
     log = logger.get_logger('dionysia_tools')
     log.debug('Loaded')
+
+
+############################################################
+# Plex Update Collections
+############################################################
+
+@app.command(context_settings=dict(max_content_width=119))
+@click.option(
+    '--trending', '-t',
+    help="Add/Update the Trakt 'Trending Collection'",
+    is_flag=True
+)
+@click.option(
+    '--popular', '-w',
+    help="Add/Update the Trakt 'Trending Popular'",
+    is_flag=True
+)
+@click.option(
+    '--file', '-f',
+    help="Add/Update from the Collections File'",
+    is_flag=True
+)
+@click.option(
+    '--library',
+    default='Movies',
+    show_default=True,
+    help="Name of the Movie library to update",
+)
+@click.option(
+    '--jsonfile',
+    type=click.Path(file_okay=True, dir_okay=False),
+    help='JSON Collections File',
+    show_default=True,
+    default=os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), "collections.json")
+)
+def plex_collections(library, trending, popular, file, jsonfile):
+    """Will update Plex's Collections to include an automatically generated
+    lists from Trakt from Trending and Watched (Popular).
+    It will also add collections from a JSON file.
+    """
+    from .interfaces.trakt import Trakt
+    from .interfaces.plex import Plex
+    plex = Plex(cfg)
+    trakt = Trakt(cfg)
+
+    if trending:
+        trakt_movies = trakt.get_top_trending_movies(30)
+        trakt_movie_list = []
+        for trakt_movie in trakt_movies:
+            trakt_movie_list.append({
+                'title': trakt_movie['movie']['title'],
+                'year': trakt_movie['movie']['year'],
+            })
+        plex.update_collection(library, trakt_movie_list, 'Trakt Trending')
 
 
 ############################################################
@@ -66,7 +125,7 @@ def app(config, cachefile, logfile, verbose):
 
 @app.command(context_settings=dict(max_content_width=119))
 @click.option(
-    '--library', '-l',
+    '--library',
     default='Movies',
     show_default=True,
     help="Name of the Movie library to update",
@@ -83,8 +142,8 @@ def plex_recently_added(library, number):
     to have available Trakt Trending titles
     near the beginning.
     """
-    from interfaces.trakt import Trakt
-    from interfaces.plex import Plex
+    from .interfaces.trakt import Trakt
+    from .interfaces.plex import Plex
     plex = Plex(cfg)
     trakt = Trakt(cfg)
 
@@ -120,8 +179,8 @@ def trakt_update(list_names, stage):
     The following LIST_NAMES are available:
     cfdvd, cftheater, stevenlu
     """
-    from interfaces.trakt import Trakt
-    from interfaces.stevenlu import StevenLu
+    from .interfaces.trakt import Trakt
+    from .interfaces.stevenlu import StevenLu
     stevenlu = StevenLu(cfg)
     trakt = Trakt(cfg)
 
@@ -161,7 +220,7 @@ def trakt_update(list_names, stage):
 
 @app.command(help='Authenticate Trakt with Dionysia Tools.')
 def trakt_authentication():
-    from interfaces.trakt import Trakt
+    from .interfaces.trakt import Trakt
     trakt = Trakt(cfg)
 
     if trakt.oauth_authentication():

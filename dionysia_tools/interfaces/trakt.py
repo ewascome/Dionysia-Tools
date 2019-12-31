@@ -4,9 +4,9 @@ import requests
 import time
 
 from cashier import cache
-from helpers.misc import (backoff_handler, dict_merge, number_suffix)
-from utils.log import logger
-from utils.config import Config
+from ..helpers.misc import (backoff_handler, dict_merge, number_suffix)
+from ..utils.log import logger
+from ..utils.config import Config
 
 log = logger.get_logger(__name__)
 cachefile = Config().cachefile

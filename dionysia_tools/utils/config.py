@@ -1,5 +1,6 @@
 import attrdict
 import json
+import pathlib
 import os
 import sys
 
@@ -65,7 +66,7 @@ class Config(object, metaclass=Singleton):
             'minimum_availability': 'released',
             'quality': 'HD-1080p',
             'root_folder': '/movies/',
-            'url': 'http://localhost:7878/'
+            'baseurl': 'http://localhost:7878/'
         },
         'sonarr': {
             'api_key': '',
@@ -74,7 +75,7 @@ class Config(object, metaclass=Singleton):
             'root_folder': '/tv/',
             'tags': {
             },
-            'url': 'http://localhost:8989/'
+            'baseurl': 'http://localhost:8989/'
         },
         'omdb': {
             'api_key': ''
@@ -89,6 +90,12 @@ class Config(object, metaclass=Singleton):
     def __init__(self, configfile, cachefile, logfile):
         """Initializes config"""
         self.conf = None
+
+        print(os.path.split(configfile)[0])
+
+        pathlib.Path(os.path.split(configfile)[0]).mkdir(parents=True, exist_ok=True)
+        pathlib.Path(os.path.split(cachefile)[0]).mkdir(parents=True, exist_ok=True)
+        pathlib.Path(os.path.split(logfile)[0]).mkdir(parents=True, exist_ok=True)
 
         self.config_path = configfile
         self.cache_path = cachefile

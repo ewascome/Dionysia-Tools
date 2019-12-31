@@ -1,4 +1,4 @@
-from utils.log import logger
+from ..utils.log import logger
 log = logger.get_logger(__name__)
 
 
