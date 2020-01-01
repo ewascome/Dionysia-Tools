@@ -59,8 +59,23 @@ class Config(object, metaclass=Singleton):
         },
         'plex-collections': {
             'standard': {
+                'agent': 'json',
                 'url': 'https://api.jsonbin.io/b/5e0b7de402ce5777b8b566d3/latest'
             },
+            'christmas': {
+                'agent': 'trakt',
+                'user': 'ewascome',
+                'list_id': 'christmas-favorites',
+                'type': 'movie',
+                'name': 'Christmas Favorites'
+            },
+            'hallmark': {
+                'agent': 'trakt',
+                'user': 'tass22',
+                'list_id': 'hallmark-lifetime-christmas-movies-2019',
+                'type': 'movie',
+                'name': 'Hallmark Holiday'
+            }
         },
         'plex': {
             'url': '',

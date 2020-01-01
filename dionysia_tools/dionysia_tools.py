@@ -124,11 +124,24 @@ def plex_collections(library, trending, popular, list_names, stage):
             log.error("You will need to add '%s' to {'plex-collections':{}} in the Configuration file", example)
             break
         list_details = cfg['plex-collections'][name]
-        list_items = json_list.get_list(list_details['url'], name)
-        for collection in list_items:
+        if list_details['agent'] == 'json':
+            list_items = json_list.get_list(list_details['url'], name)
+            for collection in list_items:
+                plex.update_collection(library,
+                                       collection['list_movies'],
+                                       collection['collection_name'],
+                                       stage)
+        if list_details['agent'] == 'trakt':
+            trakt_movies = trakt.get_user_list_movies(list_details['user'], list_details['list_id'])
+            trakt_movie_list = []
+            for trakt_movie in trakt_movies:
+                trakt_movie_list.append({
+                    'title': trakt_movie['movie']['title'],
+                    'year': trakt_movie['movie']['year'],
+                })
             plex.update_collection(library,
-                                   collection['list_movies'],
-                                   collection['collection_name'],
+                                   trakt_movie_list,
+                                   list_details['name'],
                                    stage)
 
     if trending:
@@ -156,7 +169,6 @@ def plex_collections(library, trending, popular, list_names, stage):
                                trakt_movie_list,
                                'Trakt Popular',
                                stage)
-
 
 
 ############################################################
