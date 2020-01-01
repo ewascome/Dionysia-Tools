@@ -208,7 +208,56 @@ def plex_recently_added(library, number):
             year=trakt_movie['movie']['year'],
             timedelta_minutes=minutes
         )
-        minutes += -1
+        minutes += 1
+
+
+############################################################
+# Radarr Search
+############################################################
+
+@app.command(context_settings=dict(max_content_width=119))
+@click.option(
+    '--oldest', '-o',
+    help="Download Older Missing, Monitored, and Available",
+    is_flag=True
+)
+@click.option(
+    '--rating', '-r',
+    help="Download Higher Rated Missing, Monitored, and Available",
+    is_flag=True
+)
+@click.option(
+    '--votes', '-v',
+    help="Download Higher Voted Missing, Monitored, and Available",
+    is_flag=True
+)
+@click.option(
+    '--cutoff',
+    help="Percent of the Older/Vote/Rating to include.",
+    type=float,
+    show_default=True,
+    default=99,
+)
+@click.option(
+    '--stage',
+    help="Will analyze needed changes but will NOT trigger Radarr",
+    is_flag=True
+)
+def radarr_missing(oldest, rating, votes, cutoff, stage):
+    """
+    Download Missing, Monitored and considered Available movies from Radarr
+    """
+    from .interfaces.radarr import Radarr
+    radarr = Radarr(cfg)
+    cutoff /= 100
+
+    if oldest:
+        radarr.search_missing_oldest(cutoff, stage)
+    if rating:
+        radarr.search_missing_high_rating(cutoff, stage)
+    if votes:
+        radarr.search_missing_high_votes(cutoff, stage)
+
 
 ############################################################
 # Trakt Update

@@ -10,7 +10,7 @@ class Logger:
     def __init__(self,
                  file_name=None,
                  log_level=logging.DEBUG,
-                 log_format='%(asctime)s - %(levelname)-10s - %(name)-35s - %(funcName)-25s - %(message)s'):
+                 log_format='%(asctime)s - %(levelname)-10s - %(name)-35s - %(funcName)-30s - %(message)s'):
 
         # init root_logger
         self.log_formatter = logging.Formatter(log_format)

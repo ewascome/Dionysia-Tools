@@ -73,9 +73,9 @@ class Plex:
         else:
             return None
 
-    def get_movie_then_push_addedAt(self, section, title, year, timedelta_minutes=-240):
+    def get_movie_then_push_addedAt(self, section, title, year, timedelta_minutes=240):
         addedAt = datetime.datetime.now()
-        addedAt += datetime.timedelta(minutes=timedelta_minutes)
+        addedAt += datetime.timedelta(minutes=-timedelta_minutes)
         movie = self.get_movie(section, title, year)
         if movie and movie.media[0].videoResolution in ['1080', '4K']:
             self.add_tag(movie, 'Trakt Trending', 'collections')
