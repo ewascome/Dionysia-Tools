@@ -31,6 +31,17 @@ class Radarr(ARR):
     def get_all_movies(self):
         return self._get_objects('movie')
 
+    @cache(cache_file=cachefile, cache_time=300, retry_if_blank=True)
+    def _tags(self):
+        _tags = {}
+        for d in self._get_objects('tag'):
+            _tags[d['label']] = d['id']
+        return _tags
+
+    @property
+    def tags(self):
+        return self._tags()
+
     def get_stats(self, downloaded=False, available=True):
         high_rating = 0
         high_votes = 0
@@ -51,33 +62,45 @@ class Radarr(ARR):
         )
 
     @backoff.on_predicate(backoff.expo, lambda x: x is None, max_tries=4, on_backoff=backoff_handler)
-    def _command(self, endpoint, data=None, status_code=200):
+    def _command(self, endpoint, data=None, method='get', success_status_code=200):
         try:
             # make request
-            req = requests.post(
-                self.server_url + '/api/' + endpoint,
+            req = requests.request(
+                method=method,
+                url=self.server_url + '/api/' + endpoint,
                 headers=self.headers,
                 json=data,
                 timeout=60,
                 allow_redirects=False
             )
-            log.debug("Request URL: %s", req.url)
+            log.debug("Request URL: %s %s", method.upper(), req.url)
+            log.debug("Request Data: %s", data)
             log.debug("Request Response: %d", req.status_code)
 
-            if req.status_code == status_code:
+            if req.status_code == success_status_code:
                 resp_json = req.json()
                 return resp_json
             else:
-                log.error("Failed to retrieve all objects, request response: %d", req.status_code)
+                log.error("Failed, request response: %d", req.status_code)
         except Exception:
             log.exception("Exception retrieving objects: ")
         return None
 
     def movie_search(self, id):
         return self._command(
-            'command',
-            {'name': 'MoviesSearch', 'movieIds': [id]},
-            201)
+            method='post',
+            endpoint='command',
+            data={'name': 'MoviesSearch',
+                  'movieIds': [id]},
+            success_status_code=201)
+
+    def movie_delete(self, id, delete_files=True, add_exclusion=False):
+        return self._command(
+            method='delete',
+            endpoint="/movie/{}".format(id),
+            data={'id': [id],
+                  'deleteFiles': delete_files,
+                  'addExclusion': add_exclusion}) == {}
 
     def search_missing_oldest(self, cutoff=0.99, stage=False):
         oldest = self.get_stats()['oldest']
@@ -119,7 +142,7 @@ class Radarr(ARR):
             if not movie['downloaded'] and movie['isAvailable']:
                 if movie['ratings']:
                     if movie['ratings']['votes'] >= high_votes * 0.99:
-                        title = "{m[title]} ({m[year]})".format(m=movie)
+                        title = u"{m[title]} ({m[year]})".format(m=movie)
                         id = movie['id']
                         if stage:
                             log.info('STAGE: Trigger Search for [%s] %s', id, title)
@@ -127,3 +150,44 @@ class Radarr(ARR):
                             log.info('Triggered Search for [%s] %s', id, title)
                         else:
                             log.warning('Unable to search for [%s] %s', id, title)
+
+    def purge_missing_unmonitored(self, stage=True, tag_to_protect='watched', delete_files=True, add_exclusion=False):
+        tag_id_to_protect = self.tags[tag_to_protect] if tag_to_protect in self.tags else -1
+        now = datetime.datetime.now(dateutil.tz.tzutc())
+        log.debug("Searching for Movies that are Unmonitored and Missing")
+        for movie in self.get_all_movies():
+            if not movie['downloaded'] and not movie['monitored']:
+                title = u"{m[title]} ({m[year]})".format(m=movie)
+                id = movie['id']
+                if tag_id_to_protect not in movie['tags']:
+                    if stage:
+                        log.info('STAGE: Remove Missing and Unmonitored [%s] %s', id, title)
+                    elif self.movie_delete(id, delete_files, add_exclusion):
+                        log.info('Removed the Missing and Unmonitored [%s] %s', id, title)
+                    else:
+                        log.warning('Unable to remove [%s] %s', id, title)
+                else:
+                    log.debug("Skipping [%s] %s, tagged with '%s'", id, title, tag_to_protect)
+
+    def purge_downloaded_unmonitored(self, days_to_keep, stage=True):
+        now = datetime.datetime.now(dateutil.tz.tzutc())
+        duration_to_keep = datetime.timedelta(90)
+        for movie in json_radarr:
+            if not movie['monitored'] and not movie['tags'] == [2]:
+                movie_added = dateutil.parser.parse(movie['added'])
+                days_since_added = now - movie_added
+                if movie['downloaded']:
+                    movie_downloaded = dateutil.parser.parse(movie['movieFile']['dateAdded'])
+                    days_since_downloaded = now - movie_downloaded
+                    if days_since_added > duration_to_keep and days_since_downloaded > duration_to_keep:
+                        stage['delete'].append(movie)
+                        statement = u"DELETE [Added {dsa.days} days ago, Downloaded {dsa.days} days ago, but not Monitored] - {title}".format(
+                            dsd=days_since_downloaded, dsa=days_since_added, **movie)
+                    else:
+                        stage['monitor'].append(movie)
+                        statement = u"REMONITOR [Added {dsa.days} days ago, Downloaded {dsd.days} days ago, but not Monitored] - {title}".format(
+                            dsd=days_since_downloaded, dsa=days_since_added, **movie)
+                else:
+                    stage['remove'].append(movie)
+                    statement = u"REMOVE [Missing, but not Monitored] - {title}".format(**movie)
+                log.debug("Stage: %s", statement)

@@ -258,6 +258,50 @@ def radarr_missing(oldest, rating, votes, cutoff, stage):
     if votes:
         radarr.search_missing_high_votes(cutoff, stage)
 
+############################################################
+# Radarr Search
+############################################################
+
+
+@app.command(context_settings=dict(max_content_width=119))
+@click.option(
+    '--tag_to_protect', '-t',
+    help="Avoid deleting movies in Radarr with the following tag",
+    show_default=True,
+    default='watched'
+)
+@click.option(
+    '--delete_files/--no-delete_files',
+    help="Will keep the files but will remove from Radarr",
+    show_default=True,
+    default=True,
+    is_flag=True
+)
+@click.option(
+    '--exclude/--no-exclude',
+    help="Will exclude movie from being readded automatically by Radarr in the future",
+    show_default=True,
+    default=False,
+    is_flag=True
+)
+@click.option(
+    '--stage/--no-stage',
+    help="Will analyze needed changes but will NOT trigger Radarr",
+    default=True,
+    is_flag=True
+)
+def radarr_purge(stage, tag_to_protect, delete_files, exclude):
+    """
+    Purge Downloaded, but not Monitored AND Missing, but not Monitored from Radarr
+    """
+    from .interfaces.radarr import Radarr
+    radarr = Radarr(cfg)
+
+    radarr.purge_missing_unmonitored(stage,
+                                     tag_to_protect,
+                                     delete_files=delete_files,
+                                     add_exclusion=exclude)
+
 
 ############################################################
 # Trakt Update
