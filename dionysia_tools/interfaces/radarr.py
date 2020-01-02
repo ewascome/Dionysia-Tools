@@ -94,10 +94,17 @@ class Radarr(ARR):
                   'movieIds': [id]},
             success_status_code=201)
 
+    def movie_update(self, movie):
+        return self._command(
+            method='put',
+            endpoint="movie/{}".format(movie['id']),
+            data=movie,
+            success_status_code=202)
+
     def movie_delete(self, id, delete_files=True, add_exclusion=False):
         return self._command(
             method='delete',
-            endpoint="/movie/{}".format(id),
+            endpoint="movie/{}".format(id),
             data={'id': [id],
                   'deleteFiles': delete_files,
                   'addExclusion': add_exclusion}) == {}
@@ -151,9 +158,37 @@ class Radarr(ARR):
                         else:
                             log.warning('Unable to search for [%s] %s', id, title)
 
-    def purge_missing_unmonitored(self, stage=True, tag_to_protect='watched', delete_files=True, add_exclusion=False):
-        tag_id_to_protect = self.tags[tag_to_protect] if tag_to_protect in self.tags else -1
+    def remonitor_downloaded(self, stage=True, days_to_keep=90):
         now = datetime.datetime.now(dateutil.tz.tzutc())
+        duration_to_keep = datetime.timedelta(days=days_to_keep)
+        log.debug("Searching for Movies that are Downloaded, Unmonitored and under%3d days old", duration_to_keep.days)
+        for movie in self.get_all_movies():
+            if movie['downloaded'] and not movie['monitored']:
+                title = u"{m[title]} ({m[year]})".format(m=movie)
+                id = movie['id']
+                movie_added = dateutil.parser.parse(movie['added'])
+                movie_downloaded = dateutil.parser.parse(movie['movieFile']['dateAdded'])
+                days_since_added = now - movie_added
+                days_since_downloaded = now - movie_downloaded
+                if (days_since_added < duration_to_keep and
+                        days_since_downloaded < duration_to_keep):
+                    movie['monitored'] = True
+                    if stage:
+                        log.info('STAGE: Remonitor Downloaded, Unmonitored and <%3d days old [%s] %s',
+                                 duration_to_keep.days,
+                                 id,
+                                 title)
+                    elif self.movie_update(movie):
+                        log.info('Remonitored [%s] %s', id, title)
+                    else:
+                        log.warning('Unable to remonitor [%s] %s', id, title)
+
+    def purge_missing_unmonitored(self,
+                                  stage=True,
+                                  tag_to_protect='watched',
+                                  delete_files=True,
+                                  add_exclusion=False):
+        tag_id_to_protect = self.tags[tag_to_protect] if tag_to_protect in self.tags else -1
         log.debug("Searching for Movies that are Unmonitored and Missing")
         for movie in self.get_all_movies():
             if not movie['downloaded'] and not movie['monitored']:
@@ -163,31 +198,46 @@ class Radarr(ARR):
                     if stage:
                         log.info('STAGE: Remove Missing and Unmonitored [%s] %s', id, title)
                     elif self.movie_delete(id, delete_files, add_exclusion):
-                        log.info('Removed the Missing and Unmonitored [%s] %s', id, title)
+                        log.info('Removed [%s] %s', id, title)
                     else:
                         log.warning('Unable to remove [%s] %s', id, title)
                 else:
                     log.debug("Skipping [%s] %s, tagged with '%s'", id, title, tag_to_protect)
 
-    def purge_downloaded_unmonitored(self, days_to_keep, stage=True):
+    def purge_downloaded_unmonitored(self,
+                                     stage=True,
+                                     days_to_keep=90,
+                                     tag_to_protect='watched',
+                                     delete_files=True,
+                                     add_exclusion=False):
+        tag_id_to_protect = self.tags[tag_to_protect] if tag_to_protect in self.tags else -1
         now = datetime.datetime.now(dateutil.tz.tzutc())
-        duration_to_keep = datetime.timedelta(90)
-        for movie in json_radarr:
-            if not movie['monitored'] and not movie['tags'] == [2]:
-                movie_added = dateutil.parser.parse(movie['added'])
-                days_since_added = now - movie_added
-                if movie['downloaded']:
+        duration_to_keep = datetime.timedelta(days=days_to_keep)
+        log.debug("Searching for Movies that are Downloaded, Unmonitored and%3d days old", duration_to_keep.days)
+        for movie in self.get_all_movies():
+            if movie['downloaded'] and not movie['monitored']:
+                title = u"{m[title]} ({m[year]})".format(m=movie)
+                id = movie['id']
+                if tag_id_to_protect not in movie['tags']:
+                    movie_added = dateutil.parser.parse(movie['added'])
                     movie_downloaded = dateutil.parser.parse(movie['movieFile']['dateAdded'])
+                    days_since_added = now - movie_added
                     days_since_downloaded = now - movie_downloaded
                     if days_since_added > duration_to_keep and days_since_downloaded > duration_to_keep:
-                        stage['delete'].append(movie)
-                        statement = u"DELETE [Added {dsa.days} days ago, Downloaded {dsa.days} days ago, but not Monitored] - {title}".format(
-                            dsd=days_since_downloaded, dsa=days_since_added, **movie)
+                        if stage:
+                            log.info('STAGE: Remove Downloaded, Unmonitored and%3d days old [%s] %s',
+                                     duration_to_keep.days,
+                                     id,
+                                     title)
+                        elif self.movie_delete(id, delete_files, add_exclusion):
+                            log.info('Removed [%s] %s', id, title)
+                        else:
+                            log.warning('Unable to remove [%s] %s', id, title)
                     else:
-                        stage['monitor'].append(movie)
-                        statement = u"REMONITOR [Added {dsa.days} days ago, Downloaded {dsd.days} days ago, but not Monitored] - {title}".format(
-                            dsd=days_since_downloaded, dsa=days_since_added, **movie)
+                        log.debug("Skipping [%s] Added%4d Downloaded%4d %s",
+                                  id,
+                                  days_since_added.days,
+                                  days_since_downloaded.days,
+                                  title)
                 else:
-                    stage['remove'].append(movie)
-                    statement = u"REMOVE [Missing, but not Monitored] - {title}".format(**movie)
-                log.debug("Stage: %s", statement)
+                    log.debug("Skipping [%s] %s, tagged with '%s'", id, title, tag_to_protect)

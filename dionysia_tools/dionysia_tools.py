@@ -200,7 +200,7 @@ def plex_recently_added(library, number):
     trakt = Trakt(cfg)
 
     trakt_trending = trakt.get_top_trending_movies(number)
-    minutes = 240 + number
+    minutes = 60 * 12 + number
     for trakt_movie in trakt_trending:
         plex.get_movie_then_push_addedAt(
             section=library,
@@ -265,7 +265,29 @@ def radarr_missing(oldest, rating, votes, cutoff, stage):
 
 @app.command(context_settings=dict(max_content_width=119))
 @click.option(
-    '--tag_to_protect', '-t',
+    '--missing', '-m',
+    help="Remove Missing & Unmonitored Movies",
+    is_flag=True
+)
+@click.option(
+    '--downloaded', '-d',
+    help="Remove Downloaded & Older Unmonitored Movies",
+    is_flag=True
+)
+@click.option(
+    '--remonitor', '-r',
+    help="Remonitor Downloaded & Younger Unmonitored Movies",
+    is_flag=True
+)
+@click.option(
+    '--days_to_keep',
+    type=int,
+    help="Avoid deleting movies in Radarr less than [days] old",
+    show_default=True,
+    default=90
+)
+@click.option(
+    '--tag_to_protect',
     help="Avoid deleting movies in Radarr with the following tag",
     show_default=True,
     default='watched'
@@ -290,17 +312,26 @@ def radarr_missing(oldest, rating, votes, cutoff, stage):
     default=True,
     is_flag=True
 )
-def radarr_purge(stage, tag_to_protect, delete_files, exclude):
+def radarr_purge(downloaded, missing, remonitor, stage, days_to_keep, tag_to_protect, delete_files, exclude):
     """
     Purge Downloaded, but not Monitored AND Missing, but not Monitored from Radarr
     """
     from .interfaces.radarr import Radarr
     radarr = Radarr(cfg)
 
-    radarr.purge_missing_unmonitored(stage,
-                                     tag_to_protect,
-                                     delete_files=delete_files,
-                                     add_exclusion=exclude)
+    if missing:
+        radarr.purge_missing_unmonitored(stage,
+                                         tag_to_protect,
+                                         delete_files=delete_files,
+                                         add_exclusion=exclude)
+    if downloaded:
+        radarr.purge_downloaded_unmonitored(stage,
+                                            days_to_keep,
+                                            tag_to_protect,
+                                            delete_files=delete_files,
+                                            add_exclusion=exclude)
+    if remonitor:
+        radarr.remonitor_downloaded(stage, days_to_keep)
 
 
 ############################################################
