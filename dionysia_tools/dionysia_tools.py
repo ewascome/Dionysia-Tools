@@ -200,7 +200,7 @@ def plex_recently_added(library, number):
     trakt = Trakt(cfg)
 
     trakt_trending = trakt.get_top_trending_movies(number)
-    minutes = 60 * 12 + number
+    minutes = 60 * 24 + number
     for trakt_movie in trakt_trending:
         plex.get_movie_then_push_addedAt(
             section=library,
