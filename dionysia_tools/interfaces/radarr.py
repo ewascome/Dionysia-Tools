@@ -62,7 +62,7 @@ class Radarr(ARR):
         )
 
     @backoff.on_predicate(backoff.expo, lambda x: x is None, max_tries=4, on_backoff=backoff_handler)
-    def _command(self, endpoint, data=None, method='get', success_status_code=200):
+    def _command(self, endpoint, data=None, params=None, method='get', success_status_code=200):
         try:
             # make request
             req = requests.request(
@@ -70,6 +70,7 @@ class Radarr(ARR):
                 url=self.server_url + '/api/' + endpoint,
                 headers=self.headers,
                 json=data,
+                params=params,
                 timeout=60,
                 allow_redirects=False
             )
@@ -105,9 +106,8 @@ class Radarr(ARR):
         return self._command(
             method='delete',
             endpoint="movie/{}".format(id),
-            data={'id': [id],
-                  'deleteFiles': delete_files,
-                  'addExclusion': add_exclusion}) == {}
+            params={'deleteFiles': delete_files,
+                    'addExclusion': add_exclusion}) == {}
 
     def search_missing_oldest(self, cutoff=0.99, stage=False):
         oldest = self.get_stats()['oldest']
@@ -242,8 +242,11 @@ class Radarr(ARR):
                 else:
                     log.debug("Skipping [%s] %s, tagged with '%s'", id, title, tag_to_protect)
 
-    def purge_tagged(self, stage=True, tag_to_remove=None, delete_files=True,
-                                     add_exclusion=False):
+    def purge_tagged(self,
+                     stage=True,
+                     tag_to_remove=None,
+                     delete_files=True,
+                     add_exclusion=False):
         tag_id_to_remove = self.tags[tag_to_remove] if tag_to_remove in self.tags else -1
         log.debug("Searching for Movies that are tagged '%s'", tag_to_remove)
         for movie in self.get_all_movies():
@@ -253,7 +256,6 @@ class Radarr(ARR):
                 if stage:
                     log.info("STAGE: Remove '%s' tagged [%s] %s", tag_to_remove, id, title)
                 elif self.movie_delete(id, delete_files, add_exclusion):
-                            log.info('Removed [%s] %s', id, title)
-                        else:
-                            log.warning('Unable to remove [%s] %s', id, title)
-        
+                    log.info('Removed [%s] %s', id, title)
+                else:
+                    log.warning('Unable to remove [%s] %s', id, title)
