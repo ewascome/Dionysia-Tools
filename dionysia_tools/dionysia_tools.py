@@ -335,11 +335,11 @@ def radarr_purge(downloaded, missing, remonitor, tag_to_remove, stage, days_to_k
                                             delete_files=delete_files,
                                             add_exclusion=exclude)
     if tag_to_remove:
-        radarr.purge_tagged(stage, 
-        tag_to_remove,
-        delete_files=delete_files,
-        add_exclusion=exclude)
-        
+        radarr.purge_tagged(stage,
+                            tag_to_remove,
+                            delete_files=delete_files,
+                            add_exclusion=exclude)
+
     if remonitor:
         radarr.remonitor_downloaded(stage, days_to_keep)
 

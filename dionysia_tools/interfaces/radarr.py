@@ -241,7 +241,7 @@ class Radarr(ARR):
                                   title)
                 else:
                     log.debug("Skipping [%s] %s, tagged with '%s'", id, title, tag_to_protect)
-                    
+
     def purge_tagged(self, stage=True, tag_to_remove=None, delete_files=True,
                                      add_exclusion=False):
         tag_id_to_remove = self.tags[tag_to_remove] if tag_to_remove in self.tags else -1
