@@ -258,10 +258,10 @@ def radarr_missing(oldest, rating, votes, cutoff, stage):
     if votes:
         radarr.search_missing_high_votes(cutoff, stage)
 
-############################################################
-# Radarr Search
-############################################################
 
+############################################################
+# Radarr Purge
+############################################################
 
 @app.command(context_settings=dict(max_content_width=119))
 @click.option(
@@ -278,6 +278,10 @@ def radarr_missing(oldest, rating, votes, cutoff, stage):
     '--remonitor', '-r',
     help="Remonitor Downloaded & Younger Unmonitored Movies",
     is_flag=True
+)
+@click.option(
+    '--tag_to_remove', '-t',
+    help="Remove Files with a certain Tag",
 )
 @click.option(
     '--days_to_keep',
@@ -312,7 +316,7 @@ def radarr_missing(oldest, rating, votes, cutoff, stage):
     default=True,
     is_flag=True
 )
-def radarr_purge(downloaded, missing, remonitor, stage, days_to_keep, tag_to_protect, delete_files, exclude):
+def radarr_purge(downloaded, missing, remonitor, tag_to_remove, stage, days_to_keep, tag_to_protect, delete_files, exclude):
     """
     Purge Downloaded, but not Monitored AND Missing, but not Monitored from Radarr
     """
@@ -330,6 +334,12 @@ def radarr_purge(downloaded, missing, remonitor, stage, days_to_keep, tag_to_pro
                                             tag_to_protect,
                                             delete_files=delete_files,
                                             add_exclusion=exclude)
+    if tag_to_remove:
+        radarr.purge_tagged(stage, 
+        tag_to_remove,
+        delete_files=delete_files,
+        add_exclusion=exclude)
+        
     if remonitor:
         radarr.remonitor_downloaded(stage, days_to_keep)
 

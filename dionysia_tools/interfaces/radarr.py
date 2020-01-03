@@ -241,3 +241,19 @@ class Radarr(ARR):
                                   title)
                 else:
                     log.debug("Skipping [%s] %s, tagged with '%s'", id, title, tag_to_protect)
+                    
+    def purge_tagged(self, stage=True, tag_to_remove=None, delete_files=True,
+                                     add_exclusion=False):
+        tag_id_to_remove = self.tags[tag_to_remove] if tag_to_remove in self.tags else -1
+        log.debug("Searching for Movies that are tagged '%s'", tag_to_remove)
+        for movie in self.get_all_movies():
+            if tag_id_to_remove in movie['tags']:
+                title = u"{m[title]} ({m[year]})".format(m=movie)
+                id = movie['id']
+                if stage:
+                    log.info("STAGE: Remove '%s' tagged [%s] %s", tag_to_remove, id, title)
+                elif self.movie_delete(id, delete_files, add_exclusion):
+                            log.info('Removed [%s] %s', id, title)
+                        else:
+                            log.warning('Unable to remove [%s] %s', id, title)
+        
