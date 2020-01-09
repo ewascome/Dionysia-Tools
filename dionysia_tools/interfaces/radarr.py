@@ -158,9 +158,10 @@ class Radarr(ARR):
                         else:
                             log.warning('Unable to search for [%s] %s', id, title)
 
-    def remonitor_downloaded(self, stage=True, days_to_keep=90):
+    def remonitor_downloaded(self, stage=True, days_to_keep=90, tag_to_protect='watched'):
         now = datetime.datetime.now(dateutil.tz.tzutc())
         duration_to_keep = datetime.timedelta(days=days_to_keep)
+        tag_id_to_protect = self.tags[tag_to_protect] if tag_to_protect in self.tags else -1
         log.debug("Searching for Movies that are Downloaded, Unmonitored and under%3d days old", duration_to_keep.days)
         for movie in self.get_all_movies():
             if movie['downloaded'] and not movie['monitored']:
@@ -170,18 +171,21 @@ class Radarr(ARR):
                 movie_downloaded = dateutil.parser.parse(movie['movieFile']['dateAdded'])
                 days_since_added = now - movie_added
                 days_since_downloaded = now - movie_downloaded
-                if (days_since_added < duration_to_keep and
-                        days_since_downloaded < duration_to_keep):
-                    movie['monitored'] = True
-                    if stage:
-                        log.info('STAGE: Remonitor Downloaded, Unmonitored and <%3d days old [%s] %s',
-                                 duration_to_keep.days,
-                                 id,
-                                 title)
-                    elif self.movie_update(movie):
-                        log.info('Remonitored [%s] %s', id, title)
-                    else:
-                        log.warning('Unable to remonitor [%s] %s', id, title)
+                if tag_id_to_protect not in movie['tags']:
+                    if (days_since_added < duration_to_keep and
+                            days_since_downloaded < duration_to_keep):
+                        movie['monitored'] = True
+                        if stage:
+                            log.info('STAGE: Remonitor Downloaded, Unmonitored and <%3d days old [%s] %s',
+                                     duration_to_keep.days,
+                                     id,
+                                     title)
+                        elif self.movie_update(movie):
+                            log.info('Remonitored [%s] %s', id, title)
+                        else:
+                            log.warning('Unable to remonitor [%s] %s', id, title)
+                else:
+                    log.debug("Skipping [%s] %s, taged with '%s'", id, title, tag_to_protect)
 
     def purge_missing_unmonitored(self,
                                   stage=True,
