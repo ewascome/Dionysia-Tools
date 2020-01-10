@@ -47,7 +47,7 @@ class Radarr(ARR):
         high_votes = 0
         oldest = datetime.datetime.now(dateutil.tz.tzutc())
         for movie in self.get_all_movies():
-            if movie['downloaded'] == downloaded and movie['isAvailable'] == available:
+            if movie['monitored'] and movie['downloaded'] == downloaded and movie['isAvailable'] == available:
                 if movie['ratings']:
                     if movie['ratings']['votes'] and movie['ratings']['votes'] > high_votes:
                         high_votes = movie['ratings']['votes']
@@ -115,7 +115,7 @@ class Radarr(ARR):
         adjustment = datetime.timedelta(days=adjustment_days)
         log.debug("Searching for Movies older than %s", (oldest + adjustment).strftime('%x'))
         for movie in self.get_all_movies():
-            if not movie['downloaded'] and movie['isAvailable']:
+            if movie['monitored'] and not movie['downloaded'] and movie['isAvailable']:
                 if movie['inCinemas'] and dateutil.parser.parse(movie['inCinemas']) <= oldest + adjustment:
                     title = "{m[title]} ({m[year]})".format(m=movie)
                     id = movie['id']
@@ -130,7 +130,7 @@ class Radarr(ARR):
         high_rating = self.get_stats()['highest_rating']
         log.debug("Searching for Movies with a rating higher than %s", cutoff * high_rating)
         for movie in self.get_all_movies():
-            if not movie['downloaded'] and movie['isAvailable']:
+            if movie['monitored'] and not movie['downloaded'] and movie['isAvailable']:
                 if movie['ratings']:
                     if movie['ratings']['value'] >= high_rating * 0.99:
                         title = "{m[title]} ({m[year]})".format(m=movie)
@@ -146,7 +146,7 @@ class Radarr(ARR):
         high_votes = self.get_stats()['highest_votes']
         log.debug("Searching for Movies with more votes than %s", cutoff * high_votes)
         for movie in self.get_all_movies():
-            if not movie['downloaded'] and movie['isAvailable']:
+            if movie['monitored'] and not movie['downloaded'] and movie['isAvailable']:
                 if movie['ratings']:
                     if movie['ratings']['votes'] >= high_votes * 0.99:
                         title = u"{m[title]} ({m[year]})".format(m=movie)
