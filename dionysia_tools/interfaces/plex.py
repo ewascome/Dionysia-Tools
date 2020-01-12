@@ -90,7 +90,8 @@ class Plex:
     def update_collection(self, section, list_of_titles_years, collection_name, stage=False):
         list_collection = []
         for list_movie in list_of_titles_years:
-            movie = self.get_movie(section, list_movie['title'], list_movie['year'])
+            current_year = datetime.datetime.now().year
+            movie = self.get_movie(section, list_movie['title'], list_movie['year'] or current_year)
             if movie:
                 list_collection.append(movie)
 
