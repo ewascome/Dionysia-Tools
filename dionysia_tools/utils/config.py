@@ -69,13 +69,6 @@ class Config(object, metaclass=Singleton):
                 'type': 'movie',
                 'name': 'Christmas Favorites'
             },
-            'hallmark': {
-                'agent': 'trakt',
-                'user': 'tass22',
-                'list_id': 'hallmark-lifetime-christmas-movies-2019',
-                'type': 'movie',
-                'name': 'Hallmark Holiday'
-            }
         },
         'plex': {
             'url': '',
