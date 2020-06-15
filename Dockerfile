@@ -12,6 +12,7 @@ RUN apk add --no-cache gcc \
                        musl-dev \
                        openssl-dev
 RUN pip3 install ./Dionysia-Tools
+RUN rm -rf /Dionysia-Tools
 
 VOLUME ["/config"]
 
