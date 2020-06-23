@@ -690,7 +690,7 @@ class Trakt:
             object_name='movie',
         )
 
-    @cache(cache_file=cachefile, cache_time=3600, retry_if_blank=True)
+    @cache(cache_file=cachefile, cache_time=1799, retry_if_blank=True)
     def get_trending_movies(
             self,
             limit=1000,
@@ -904,7 +904,7 @@ class Trakt:
             type_name=("{k} from {u}".format(u=list_user, k=list_key)),
             limit=1000)
 
-    @cache(cache_file=cachefile, cache_time=3600, retry_if_blank=True)
+    @cache(cache_file=cachefile, cache_time=1799, retry_if_blank=True)
     def get_user_list_movies_imdb(self, list_user, list_key):
         return [i['movie']['ids']['imdb'] for i in self.get_user_list_movies(list_user, list_key)]
 
