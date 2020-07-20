@@ -168,7 +168,7 @@ class Radarr(ARR):
         tag_id_to_protect = self.tags[tag_to_protect] if tag_to_protect in self.tags else -1
         log.debug("Searching for Movies that are Downloaded, Unmonitored and under%3d days old", duration_to_keep.days)
         for movie in self.get_all_movies():
-            if movie['downloaded'] and not movie['monitored']:
+            if movie['hasFile'] and not movie['monitored']:
                 title = u"{m[title]} ({m[year]})".format(m=movie)
                 id = movie['id']
                 movie_added = dateutil.parser.parse(movie['added'])
@@ -199,7 +199,7 @@ class Radarr(ARR):
         tag_id_to_protect = self.tags[tag_to_protect] if tag_to_protect in self.tags else -1
         log.debug("Searching for Movies that are Unmonitored and Missing")
         for movie in self.get_all_movies():
-            if not movie['downloaded'] and not movie['monitored']:
+            if not movie['hasFile'] and not movie['monitored']:
                 title = u"{m[title]} ({m[year]})".format(m=movie)
                 id = movie['id']
                 if tag_id_to_protect not in movie['tags']:
@@ -223,7 +223,7 @@ class Radarr(ARR):
         duration_to_keep = datetime.timedelta(days=days_to_keep)
         log.debug("Searching for Movies that are Downloaded, Unmonitored and%3d days old", duration_to_keep.days)
         for movie in self.get_all_movies():
-            if movie['downloaded'] and not movie['monitored']:
+            if movie['hasFile'] and not movie['monitored']:
                 title = u"{m[title]} ({m[year]})".format(m=movie)
                 id = movie['id']
                 if tag_id_to_protect not in movie['tags']:
