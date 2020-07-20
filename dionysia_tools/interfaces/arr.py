@@ -28,7 +28,7 @@ class ARR:
         try:
             # request system status to validate api_key
             req = requests.get(
-                self.server_url + '/api/system/status',
+                self.server_url + '/system/status',
                 headers=self.headers,
                 timeout=60,
                 allow_redirects=False
@@ -52,7 +52,7 @@ class ARR:
         try:
             # make request
             req = requests.get(
-                self.server_url + '/api/' + endpoint,
+                os.path.join(misc_str.ensure_endswith(self.server_url, "/"), endpoint),
                 headers=self.headers,
                 timeout=60,
                 allow_redirects=False
@@ -75,7 +75,7 @@ class ARR:
         try:
             # make request
             req = requests.get(
-                os.path.join(misc_str.ensure_endswith(self.server_url, "/"), 'api/profile'),
+                os.path.join(misc_str.ensure_endswith(self.server_url, "/"), 'profile'),
                 headers=self.headers,
                 timeout=60,
                 allow_redirects=False
@@ -104,7 +104,7 @@ class ARR:
 
             # make request
             ver_req = requests.get(
-                os.path.join(misc_str.ensure_endswith(self.server_url, "/"), 'api/system/status'),
+                os.path.join(misc_str.ensure_endswith(self.server_url, "/"), 'system/status'),
                 headers=self.headers,
                 timeout=60,
                 allow_redirects=False
@@ -124,7 +124,7 @@ class ARR:
         try:
             # make request
             req = requests.get(
-                os.path.join(misc_str.ensure_endswith(self.server_url, "/"), 'api/v3/languageprofile'),
+                os.path.join(misc_str.ensure_endswith(self.server_url, "/"), 'languageprofile'),
                 headers=self.headers,
                 timeout=60,
                 allow_redirects=False
