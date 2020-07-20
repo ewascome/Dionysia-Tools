@@ -4,7 +4,12 @@ import requests
 
 from abc import ABC, abstractmethod
 from cashier import cache
-from ..helpers.misc import (backoff_handler, dict_merge, number_suffix)
+from ..helpers.misc import (
+    backoff_handler,
+    ensure_endswith,
+    dict_merge,
+    number_suffix
+    )
 from ..utils.log import logger
 from ..utils.config import Config
 
@@ -28,6 +33,7 @@ class ARR:
         try:
             # request system status to validate api_key
             req = requests.get(
+                os.path.join(ensure_endswith(self.server_url, '/'), '/system/status'),
                 self.server_url + '/system/status',
                 headers=self.headers,
                 timeout=60,
@@ -52,7 +58,7 @@ class ARR:
         try:
             # make request
             req = requests.get(
-                os.path.join(misc_str.ensure_endswith(self.server_url, "/"), endpoint),
+                os.path.join(ensure_endswith(self.server_url, '/'), endpoint),
                 headers=self.headers,
                 timeout=60,
                 allow_redirects=False
@@ -75,7 +81,7 @@ class ARR:
         try:
             # make request
             req = requests.get(
-                os.path.join(misc_str.ensure_endswith(self.server_url, "/"), 'profile'),
+                os.path.join(ensure_endswith(self.server_url, '/'), 'profile'),
                 headers=self.headers,
                 timeout=60,
                 allow_redirects=False
@@ -104,7 +110,7 @@ class ARR:
 
             # make request
             ver_req = requests.get(
-                os.path.join(misc_str.ensure_endswith(self.server_url, "/"), 'system/status'),
+                os.path.join(ensure_endswith(self.server_url, '/'), 'system/status'),
                 headers=self.headers,
                 timeout=60,
                 allow_redirects=False
@@ -124,7 +130,7 @@ class ARR:
         try:
             # make request
             req = requests.get(
-                os.path.join(misc_str.ensure_endswith(self.server_url, "/"), 'languageprofile'),
+                os.path.join(ensure_endswith(self.server_url, '/'), 'languageprofile'),
                 headers=self.headers,
                 timeout=60,
                 allow_redirects=False
@@ -165,7 +171,7 @@ class ARR:
         try:
             # make request
             req = requests.post(
-                os.path.join(misc_str.ensure_endswith(self.server_url, "/"), endpoint),
+                os.path.join(ensure_endswith(self.server_url, '/'), endpoint),
                 headers=self.headers,
                 json=payload,
                 timeout=60,
