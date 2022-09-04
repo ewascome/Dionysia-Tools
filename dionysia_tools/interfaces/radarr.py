@@ -53,12 +53,13 @@ class Radarr(ARR):
         for movie in self.get_all_movies():
             if movie['monitored'] and movie['hasFile'] == downloaded and movie['isAvailable'] == available:
                 if movie['ratings']:
-                    if movie['ratings']['votes'] and movie['ratings']['votes'] > high_votes:
-                        high_votes = movie['ratings']['votes']
-                    if movie['ratings']['value'] and movie['ratings']['value'] > high_rating:
-                        high_rating = movie['ratings']['value']
-                    if movie.get('inCinemas') and dateutil.parser.parse(movie['inCinemas']) < oldest:
-                        oldest = dateutil.parser.parse(movie['inCinemas'])
+                    if movie['ratings']['imdb']:
+                        if movie['ratings']['imdb']['votes'] and movie['ratings']['imdb']['votes'] > high_votes:
+                            high_votes = movie['ratings']['votes']
+                        if movie['ratings']['imdb']['value'] and movie['ratings']['imdb']['value'] > high_rating:
+                            high_rating = movie['ratings']['value']
+                        if movie.get('inCinemas') and dateutil.parser.parse(movie['inCinemas']) < oldest:
+                            oldest = dateutil.parser.parse(movie['inCinemas'])
         return dict(
             highest_rating=high_rating,
             highest_votes=high_votes,
